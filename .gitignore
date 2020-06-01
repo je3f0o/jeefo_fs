@@ -1,0 +1,8 @@
+# Node Modules
+node_modules
+
+# Temp fodler
+.temp_publish_dir
+
+dev
+
