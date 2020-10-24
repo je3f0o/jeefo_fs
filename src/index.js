@@ -57,22 +57,23 @@ my_fs.close = fd => promise_wrapper((resolve, reject) => {
     fs.close(fd, err => err ? reject(err) : resolve());
 });
 
-my_fs.readFile = (filepath, options) => promise_wrapper((resolve, reject) => {
+my_fs.readFile = (fp, options = {}) => promise_wrapper((resolve, reject) => {
     fs.readFile(
-        filepath, options,
-        (err, data) => err ? reject(err) : resolve(data)
+        fp, options, (err, data) => err ? reject(err) : resolve(data)
     );
 });
 
-my_fs.writeFile = (fp, data, options) => promise_wrapper((resolve, reject) => {
-    fs.writeFile(
-        fp, data, options,
-        (err, data) => err ? reject(err) : resolve(data)
-    );
-});
+my_fs.writeFile = (fp, data, options = {}) => promise_wrapper(
+    (resolve, reject) => {
+        fs.writeFile(
+            fp, data, options, err => err ? reject(err) : resolve()
+        );
+    }
+);
 
-my_fs.load_json = async filepath =>
+my_fs.load_json = async filepath => {
     JSON.parse(await my_fs.readFile(filepath, "utf8"));
+};
 
 my_fs.save_json = async (filepath, data) => {
     data = JSON.stringify(data, null, 4);
