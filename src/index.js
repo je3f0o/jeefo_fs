@@ -28,10 +28,6 @@ my_fs.stat = filepath => promise_wrapper((resolve, reject) => {
     fs.stat(filepath, (err, stats) => err ? reject(err) : resolve(stats));
 });
 
-my_fs.rmdir = dirname => promise_wrapper((resolve, reject) => {
-    fs.rmdir(dirname, err => err ? reject(err) : resolve());
-});
-
 my_fs.unlink = filepath => promise_wrapper((resolve, reject) => {
     fs.unlink(filepath, err => {
         if (err) err.code === "ENOENT" ? resolve() : reject(err);
@@ -72,18 +68,13 @@ my_fs.writeFile = (fp, data, options = {}) => promise_wrapper(
 );
 
 my_fs.load_json = async filepath => {
-    JSON.parse(await my_fs.readFile(filepath, "utf8"));
+    return JSON.parse(await my_fs.readFile(filepath, "utf8"));
 };
 
-my_fs.save_json = async (filepath, data) => {
-    data = JSON.stringify(data, null, 4);
-    return promise_wrapper((resolve, reject) => {
-        fs.writeFile(
-            filepath, data, "utf8",
-            err => err ? reject(err) : resolve()
-        );
-    });
-};
+my_fs.save_json = async_wrapper(async (filepath, data, indent = 4) => {
+    data = JSON.stringify(data, null, indent);
+    await my_fs.writeFile(filepath, data, "utf8");
+});
 
 my_fs.read_bytes = async_wrapper(async function (filepath, {
     buffer,
@@ -120,35 +111,35 @@ my_fs.is_character_device = exists_factory("isCharacterDevice");
 
 my_fs.is_dir_exists = my_fs.is_directory;
 
-const _rmdir = dirname => promise_wrapper((resolve, reject) => {
-    fs.readdir(dirname, async function _rmdir (err, files) {
-        if (err) return reject(err);
-
-        try {
-            for (const file of files) {
-                const filepath = path.join(dirname, file);
-                if (await my_fs.is_directory(filepath)) {
-                    await _rmdir(filepath);
-                } else {
-                    await my_fs.unlink(filepath);
-                }
-            }
-
-            await my_fs.rmdir(dirname);
-        } catch (e) {
-            err = e;
-        } finally {
-            return err ? reject(err) : resolve();
-        }
-    });
+my_fs.readdir = dirpath => promise_wrapper((resolve, reject) => {
+    fs.readdir(dirpath, (err, files) => err ? reject(err) : resolve(files));
 });
 
-my_fs.readdir = dirname => promise_wrapper((resolve, reject) => {
-    fs.readdir(dirname, (err, files) => err ? reject(err) : resolve(files));
+const _rmdir = dirpath => promise_wrapper(async (resolve, reject) => {
+    try {
+        const files = await my_fs.readdir(dirpath);
+        for (const file of files) {
+            const filepath = path.join(dirpath, file);
+            if (await my_fs.is_directory(filepath)) {
+                await _rmdir(filepath);
+            } else {
+                await my_fs.unlink(filepath);
+            }
+        }
+
+        await my_fs.rmdir(dirpath);
+        resolve();
+    } catch (e) {
+        reject(e);
+    }
 });
 
 my_fs.mkdir = (dirpath, options = {}) => promise_wrapper((resolve, reject) => {
     fs.mkdir(dirpath, options, err => err ? reject(err) : resolve());
+});
+
+my_fs.rmdir = dirpath => promise_wrapper((resolve, reject) => {
+    fs.rmdir(dirpath, err => err ? reject(err) : resolve());
 });
 
 my_fs.remove_dir = async_wrapper(async dirpath => {
@@ -157,15 +148,17 @@ my_fs.remove_dir = async_wrapper(async dirpath => {
         if (stat.isDirectory()) {
             await _rmdir(dirpath);
         } else {
-            throw new Error(`dirpath: '${dirpath}' is not a directory`);
+            const error = new Error("ENOTDIR");
+            error.code  = "ENOTDIR";
+            throw error;
         }
     } catch (e) {
         if (e.code !== "ENOENT") throw e;
     }
 });
 
-my_fs.ensure_dir = dirpath => async_wrapper(async () => {
-    await fs.mkdir(dirpath, {recursive: true});
+my_fs.ensure_dir = async_wrapper(async dirpath => {
+    await my_fs.mkdir(dirpath, {recursive: true});
 });
 
 my_fs.remove = filepath => promise_wrapper((resolve, reject) => {
