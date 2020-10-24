@@ -57,18 +57,6 @@ my_fs.close = fd => promise_wrapper((resolve, reject) => {
     fs.close(fd, err => err ? reject(err) : resolve());
 });
 
-my_fs.readdir = dirname => promise_wrapper((resolve, reject) => {
-    fs.readdir(dirname, (err, files) => err ? reject(err) : resolve(files));
-});
-
-my_fs.mkdir = (dirpath, options = {}) => promise_wrapper((resolve, reject) => {
-    fs.mkdir(dirpath, options, err => err ? reject(err) : resolve());
-});
-
-my_fs.ensure_dir = dirpath => async_wrapper(async () => {
-    await fs.mkdir(dirpath, {recursive: true});
-});
-
 my_fs.readFile = (filepath, options) => promise_wrapper((resolve, reject) => {
     fs.readFile(
         filepath, options,
@@ -154,8 +142,29 @@ const _rmdir = dirname => promise_wrapper((resolve, reject) => {
     });
 });
 
-my_fs.remove_dir = async_wrapper(async dirname => {
-    if (await my_fs.exists(dirname)) return _rmdir(dirname);
+my_fs.readdir = dirname => promise_wrapper((resolve, reject) => {
+    fs.readdir(dirname, (err, files) => err ? reject(err) : resolve(files));
+});
+
+my_fs.mkdir = (dirpath, options = {}) => promise_wrapper((resolve, reject) => {
+    fs.mkdir(dirpath, options, err => err ? reject(err) : resolve());
+});
+
+my_fs.remove_dir = async_wrapper(async dirpath => {
+    try {
+        const stat = await my_fs.stat(dirpath);
+        if (stat.isDirectory()) {
+            await _rmdir(dirpath);
+        } else {
+            throw new Error(`dirpath: '${dirpath}' is not a directory`);
+        }
+    } catch (e) {
+        if (e.code !== "ENOENT") throw e;
+    }
+});
+
+my_fs.ensure_dir = dirpath => async_wrapper(async () => {
+    await fs.mkdir(dirpath, {recursive: true});
 });
 
 my_fs.remove = filepath => promise_wrapper((resolve, reject) => {
