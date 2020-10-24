@@ -1,7 +1,7 @@
 /* -.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
 * File Name   : index.js
 * Created at  : 2019-09-24
-* Updated at  : 2020-10-22
+* Updated at  : 2020-10-25
 * Author      : jeefo
 * Purpose     :
 * Description :
@@ -61,6 +61,14 @@ my_fs.readdir = dirname => promise_wrapper((resolve, reject) => {
     fs.readdir(dirname, (err, files) => err ? reject(err) : resolve(files));
 });
 
+my_fs.mkdir = (dirpath, options = {}) => promise_wrapper((resolve, reject) => {
+    fs.mkdir(dirpath, options, err => err ? reject(err) : resolve());
+});
+
+my_fs.ensure_dir = dirpath => async_wrapper(async () => {
+    await fs.mkdir(dirpath, {recursive: true});
+});
+
 my_fs.readFile = (filepath, options) => promise_wrapper((resolve, reject) => {
     fs.readFile(
         filepath, options,
@@ -103,14 +111,6 @@ my_fs.read_bytes = async_wrapper(async function (filepath, {
         throw new Error("Bytes read length is not matched.");
     }
     return encoding ? buffer.toString(encoding) : buffer;
-});
-
-my_fs.ensure_dir = dirname => promise_wrapper((resolve, reject) => {
-    fs.mkdir(
-        dirname,
-        {recursive: true},
-        err => err ? reject(err) : resolve()
-    );
 });
 
 const exists_factory = method => fp => promise_wrapper((resolve, reject) => {
