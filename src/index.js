@@ -1,7 +1,7 @@
 /* -.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
 * File Name   : index.js
 * Created at  : 2019-09-24
-* Updated at  : 2020-10-25
+* Updated at  : 2020-10-27
 * Author      : jeefo
 * Purpose     :
 * Description :
@@ -67,9 +67,9 @@ my_fs.writeFile = (fp, data, options = {}) => promise_wrapper(
     }
 );
 
-my_fs.load_json = async filepath => {
+my_fs.load_json = async_wrapper(async filepath => {
     return JSON.parse(await my_fs.readFile(filepath, "utf8"));
-};
+});
 
 my_fs.save_json = async_wrapper(async (filepath, data, indent = 4) => {
     data = JSON.stringify(data, null, indent);
