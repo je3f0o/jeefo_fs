@@ -1,7 +1,7 @@
 /* -.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
 * File Name   : index.js
 * Created at  : 2019-09-24
-* Updated at  : 2020-10-27
+* Updated at  : 2021-02-20
 * Author      : jeefo
 * Purpose     :
 * Description :
@@ -10,7 +10,7 @@
 // ignore:start
 "use strict";
 
-/* globals*/
+/* globals -open, -close*/
 /* exported*/
 
 // ignore:end
@@ -24,46 +24,62 @@ function JeefoFileSystem () {}
 JeefoFileSystem.prototype = Object.create(fs);
 const my_fs = new JeefoFileSystem();
 
+const {
+    stat,
+    symlink,
+    open,
+    read,
+    close,
+    unlink,
+    readFile,
+    writeFile,
+    mkdir,
+    rmdir,
+    readdir,
+} = fs;
+
+my_fs.symlink = (target, path, type) => promise_wrapper((resolve, reject) => {
+    symlink(target, path, type, err => err ? reject(err) : resolve());
+});
+
 my_fs.stat = filepath => promise_wrapper((resolve, reject) => {
-    fs.stat(filepath, (err, stats) => err ? reject(err) : resolve(stats));
+    stat(filepath, (err, stats) => err ? reject(err) : resolve(stats));
 });
 
 my_fs.unlink = filepath => promise_wrapper((resolve, reject) => {
-    fs.unlink(filepath, err => {
+    unlink(filepath, err => {
         if (err) err.code === "ENOENT" ? resolve() : reject(err);
         else resolve();
     });
 });
 
 my_fs.open = (filepath, flags, mode) => promise_wrapper((resolve, reject) => {
-    fs.open(filepath, flags, mode, (err, file_handler) => {
+    open(filepath, flags, mode, (err, file_handler) => {
         return err ? reject(err) : resolve(file_handler);
     });
 });
 
 my_fs.read = (fd, buffer, offset, length, position) => {
     return promise_wrapper((resolve, reject) => {
-        fs.read(fd, buffer, offset, length, position, (err, bytes_read) => {
+        read(fd, buffer, offset, length, position, (err, bytes_read) => {
             return err ? reject(err) : resolve(bytes_read);
         });
     });
 };
 
 my_fs.close = fd => promise_wrapper((resolve, reject) => {
-    fs.close(fd, err => err ? reject(err) : resolve());
+    close(fd, err => err ? reject(err) : resolve());
 });
 
 my_fs.readFile = (fp, options = {}) => promise_wrapper((resolve, reject) => {
-    fs.readFile(
+    readFile(
         fp, options, (err, data) => err ? reject(err) : resolve(data)
     );
 });
 
 my_fs.writeFile = (fp, data, options = {}) => promise_wrapper(
     (resolve, reject) => {
-        fs.writeFile(
-            fp, data, options, err => err ? reject(err) : resolve()
-        );
+        writeFile(fp, data, options, err => err ? reject(err) : resolve());
     }
 );
 
@@ -94,7 +110,7 @@ my_fs.read_bytes = async_wrapper(async function (filepath, {
 });
 
 const exists_factory = method => fp => promise_wrapper((resolve, reject) => {
-    fs.stat(fp, (err, stats) => {
+    stat(fp, (err, stats) => {
         if (err) err.code === "ENOENT" ? resolve(false) : reject(err);
         else resolve(method ? stats[method]() : true);
     });
@@ -112,7 +128,7 @@ my_fs.is_character_device = exists_factory("isCharacterDevice");
 my_fs.is_dir_exists = my_fs.is_directory;
 
 my_fs.readdir = dirpath => promise_wrapper((resolve, reject) => {
-    fs.readdir(dirpath, (err, files) => err ? reject(err) : resolve(files));
+    readdir(dirpath, (err, files) => err ? reject(err) : resolve(files));
 });
 
 const _rmdir = dirpath => promise_wrapper(async (resolve, reject) => {
@@ -135,11 +151,11 @@ const _rmdir = dirpath => promise_wrapper(async (resolve, reject) => {
 });
 
 my_fs.mkdir = (dirpath, options = {}) => promise_wrapper((resolve, reject) => {
-    fs.mkdir(dirpath, options, err => err ? reject(err) : resolve());
+    mkdir(dirpath, options, err => err ? reject(err) : resolve());
 });
 
 my_fs.rmdir = dirpath => promise_wrapper((resolve, reject) => {
-    fs.rmdir(dirpath, err => err ? reject(err) : resolve());
+    rmdir(dirpath, err => err ? reject(err) : resolve());
 });
 
 my_fs.remove_dir = async_wrapper(async dirpath => {
@@ -162,8 +178,8 @@ my_fs.ensure_dir = async_wrapper(async dirpath => {
 });
 
 my_fs.remove = filepath => promise_wrapper((resolve, reject) => {
-    fs.stat(filepath, async (err, stats) => {
-        if (err) return err.code === "ENOENT" ? resolve() : reject(err);
+    stat(filepath, async (err, stats) => {
+        if (err) err.code === "ENOENT" ? resolve() : reject(err);
         try {
             if (stats.isDirectory()) {
                 await _rmdir(filepath);
