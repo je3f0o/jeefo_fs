@@ -1,7 +1,7 @@
 /* -.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
 * File Name   : index.js
 * Created at  : 2019-09-24
-* Updated at  : 2021-02-20
+* Updated at  : 2021-11-29
 * Author      : jeefo
 * Purpose     :
 * Description :
@@ -33,6 +33,7 @@ const {
     unlink,
     readFile,
     writeFile,
+    appendFile,
     mkdir,
     rmdir,
     readdir,
@@ -55,33 +56,37 @@ my_fs.unlink = filepath => promise_wrapper((resolve, reject) => {
 
 my_fs.open = (filepath, flags, mode) => promise_wrapper((resolve, reject) => {
     open(filepath, flags, mode, (err, file_handler) => {
-        return err ? reject(err) : resolve(file_handler);
+        err ? reject(err) : resolve(file_handler);
     });
 });
 
-my_fs.read = (fd, buffer, offset, length, position) => {
-    return promise_wrapper((resolve, reject) => {
+my_fs.read = (fd, buffer, offset, length, position) => (
+    promise_wrapper((resolve, reject) => {
         read(fd, buffer, offset, length, position, (err, bytes_read) => {
-            return err ? reject(err) : resolve(bytes_read);
+            err ? reject(err) : resolve(bytes_read);
         });
-    });
-};
+    })
+);
 
 my_fs.close = fd => promise_wrapper((resolve, reject) => {
     close(fd, err => err ? reject(err) : resolve());
 });
 
 my_fs.readFile = (fp, options = {}) => promise_wrapper((resolve, reject) => {
-    readFile(
-        fp, options, (err, data) => err ? reject(err) : resolve(data)
-    );
+    readFile(fp, options, (err, data) => err ? reject(err) : resolve(data));
 });
 
-my_fs.writeFile = (fp, data, options = {}) => promise_wrapper(
-    (resolve, reject) => {
+my_fs.writeFile = (fp, data, options = {}) => (
+    promise_wrapper((resolve, reject) => {
         writeFile(fp, data, options, err => err ? reject(err) : resolve());
-    }
+    })
 );
+
+my_fs.appendFile = (filepath, data) => promise_wrapper((resolve, reject) => {
+    appendFile(filepath, data, (err, stats) => {
+        err ? reject(err) : resolve(stats);
+    });
+});
 
 my_fs.load_json = async_wrapper(async filepath => {
     return JSON.parse(await my_fs.readFile(filepath, "utf8"));
