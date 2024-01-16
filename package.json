@@ -1,6 +1,6 @@
 {
     "name": "@jeefo/fs",
-    "version": "0.0.11",
+    "version": "0.0.12",
     "homepage": "https://github.com/je3f0o/fs",
     "copyright": "2020",
     "description": "Async file system API keeps remembering stack information.",
@@ -25,10 +25,10 @@
         "je3f0o",
         "file system"
     ],
-    "dependencies": {
-        "@jeefo/utils": "0.0.9"
-    },
     "devDependencies": {
         "@jeefo/publish": "0.0.31"
+    },
+    "dependencies": {
+        "@jeefo/utils": "^0.0.19"
     }
 }
